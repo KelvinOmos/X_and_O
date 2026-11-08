@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#10130f">
+    <meta name="description" content="Three in a Row — play tic-tac-toe online with a friend or locally on one device.">
+    <title>Three in a Row — Tic-tac-toe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/game.js"></script>
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Three in a Row home">
+          <span class="brand-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span>THREE<span class="brand-muted"> / </span>IN A ROW</span>
+        </a>
+        <span class="prototype-tag"><span class="live-dot"></span> ONLINE PLAY</span>
+      </header>
+
+      <section class="game-layout" aria-labelledby="game-title">
+        <div class="intro">
+          <p class="eyebrow"><span>01</span> THE CLASSIC, QUICKER</p>
+          <h1 id="game-title">Make your<br><span>mark.</span></h1>
+          <p class="intro-copy">Three in a line wins the round.<br>Simple rules. Friendly rivalry.</p>
+          <div class="score-panel" aria-label="Score">
+            <div class="score-heading"><span>SESSION SCORE</span><span class="score-rule"></span></div>
+            <div class="scores">
+              <div class="score-item">
+                <span class="score-symbol mark-x">X</span>
+                <span class="score-value" id="score-x">0</span>
+                <span class="score-caption">PLAYER X</span>
+              </div>
+              <div class="score-item score-draw">
+                <span class="score-symbol">—</span>
+                <span class="score-value" id="score-draw">0</span>
+                <span class="score-caption">DRAWS</span>
+              </div>
+              <div class="score-item">
+                <span class="score-symbol mark-o">O</span>
+                <span class="score-value" id="score-o">0</span>
+                <span class="score-caption">PLAYER O</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="play-area">
+          <div class="lobby-card">
+            <div class="lobby-heading">
+              <span>PLAY WITH A FRIEND</span>
+              <span class="lobby-chip"><span class="live-dot"></span> ONLINE</span>
+            </div>
+            <label class="name-control">
+              <span class="visually-hidden">Your display name</span>
+              <input id="player-name" type="text" maxlength="20" autocomplete="off" placeholder="YOUR NAME">
+            </label>
+            <div class="lobby-actions">
+              <button class="create-button" id="create-match" type="button">Create match</button>
+              <label class="join-control">
+                <span class="visually-hidden">Friend's six-character match code</span>
+                <input id="join-code" type="text" maxlength="6" autocomplete="off" placeholder="FRIEND'S CODE" aria-label="Friend's six-character match code">
+                <button class="join-button" id="join-match" type="button">Join</button>
+              </label>
+            </div>
+            <p id="match-code" class="match-code" hidden>SHARE THIS CODE <strong id="match-code-value"></strong></p>
+            <button class="practice-button" id="practice-mode" type="button">Play on this device instead</button>
+          </div>
+
+          <p id="status-message" class="status-message" aria-live="polite">Starting…</p>
+
+          <div class="game-card">
+            <div class="game-card-top">
+              <div class="turn-status" aria-live="polite">
+                <span class="turn-mark mark-x" id="turn-mark">X</span>
+                <span class="turn-label" id="turn-label">X'S TURN</span>
+              </div>
+              <button class="reconnect-button" id="reconnect-match" type="button" hidden>Reconnect</button>
+              <span class="round-chip"><span class="live-dot"></span> TTT</span>
+            </div>
+            <div class="board" role="group" aria-label="Tic-tac-toe board">
+              <button class="cell" type="button" aria-label="Square 1: empty"></button>
+              <button class="cell" type="button" aria-label="Square 2: empty"></button>
+              <button class="cell" type="button" aria-label="Square 3: empty"></button>
+              <button class="cell" type="button" aria-label="Square 4: empty"></button>
+              <button class="cell" type="button" aria-label="Square 5: empty"></button>
+              <button class="cell" type="button" aria-label="Square 6: empty"></button>
+              <button class="cell" type="button" aria-label="Square 7: empty"></button>
+              <button class="cell" type="button" aria-label="Square 8: empty"></button>
+              <button class="cell" type="button" aria-label="Square 9: empty"></button>
+              <svg id="winning-line" class="winning-line" viewBox="0 0 300 300" aria-hidden="true" hidden>
+                <line x1="0" y1="0" x2="0" y2="0"></line>
+              </svg>
+            </div>
+            <div class="game-card-bottom">
+              <p id="result-message" class="result-message" aria-live="polite"></p>
+              <button class="new-round-button" id="new-round" type="button">New round <span aria-hidden="true">↗</span></button>
+            </div>
+          </div>
+          <div class="under-card">
+            <span>TAKE TURNS. KEEP IT KIND.</span>
+            <span>NO TIME LIMIT</span>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>BUILT FOR A LITTLE FRIENDLY COMPETITION</span>
+        <button class="reset-button" id="restart" type="button">Reset practice score</button>
+      </footer>
+    </main>
+    <dialog id="rematch-dialog" class="rematch-dialog" aria-labelledby="rematch-title" aria-describedby="rematch-message">
+      <h2 id="rematch-title">It's a draw</h2>
+      <p id="rematch-message">Would you like to play a rematch?</p>
+      <div class="rematch-actions">
+        <button id="rematch-accept" class="create-button" type="button">Yes, rematch</button>
+        <button id="rematch-decline" class="rematch-decline" type="button">No, thanks</button>
+      </div>
+    </dialog>
+  </body>
+</html>
