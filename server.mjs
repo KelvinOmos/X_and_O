@@ -45,6 +45,7 @@ function freshRoom(code) {
     players: [],           // [{ id, name, mark }]
     board: [...EMPTY_BOARD],
     currentPlayer: "X",
+    startingPlayer: "X",
     clients: new Map(),    // playerId → WebSocket
     rematchVotes: new Map(),
     rematchStatus: null,
@@ -91,6 +92,15 @@ function stateFor(room, playerId) {
 
 function broadcast(room) {
   for (const [pid, ws] of room.clients) send(ws, stateFor(room, pid));
+}
+
+function startNextRound(room) {
+  room.startingPlayer = room.startingPlayer === "X" ? "O" : "X";
+  room.board = [...EMPTY_BOARD];
+  room.currentPlayer = room.startingPlayer;
+  room.status = "playing";
+  room.rematchVotes.clear();
+  room.rematchStatus = null;
 }
 
 // ─── WebSocket message handler ────────────────────────────────────────────────
@@ -200,11 +210,7 @@ async function handleMessage(ws, raw) {
     if (!msg.accept) {
       room.rematchStatus = "declined";
     } else if (room.players.every((player) => room.rematchVotes.get(player.id) === true)) {
-      room.board = [...EMPTY_BOARD];
-      room.currentPlayer = "X";
-      room.status = "playing";
-      room.rematchVotes.clear();
-      room.rematchStatus = null;
+      startNextRound(room);
     } else {
       room.rematchStatus = "waiting";
     }
@@ -222,11 +228,7 @@ async function handleMessage(ws, raw) {
       send(ws, { type: "error", message: "Both players must agree to a rematch after a draw." });
       return;
     }
-    room.board         = [...EMPTY_BOARD];
-    room.currentPlayer = "X";
-    room.status        = "playing";
-    room.rematchVotes.clear();
-    room.rematchStatus = null;
+    startNextRound(room);
     touchRoom(room);
     broadcast(room);
     return;

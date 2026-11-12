@@ -119,3 +119,78 @@ test("two players join a room and complete a server-validated match", async (t) 
   assert.equal(completed[0].winner, "X");
   assert.equal(completed[1].winner, "X");
 });
+
+test("the other player starts an agreed rematch after a draw", async (t) => {
+  const port = await freePort();
+  const server = spawn(process.execPath, ["server.mjs"], {
+    cwd: process.cwd(),
+    env: { ...process.env, PORT: String(port) },
+    stdio: "ignore",
+  });
+  const sockets = [];
+  t.after(async () => {
+    for (const socket of sockets) socket.close();
+    server.kill();
+  });
+  await waitForServer(port);
+
+  const response = await fetch(`http://127.0.0.1:${port}/room/create`, { method: "POST" });
+  assert.equal(response.status, 200);
+  const { code } = await response.json();
+
+  const x = await connect(port, code, "Tola");
+  sockets.push(x);
+  await waitForMessage(x, (message) => message.type === "state" && message.status === "waiting");
+
+  const o = await connect(port, code, "Bisi");
+  sockets.push(o);
+  await waitForMessage(x, (message) => message.type === "state" && message.connected === 2);
+  await waitForMessage(o, (message) => message.type === "state" && message.connected === 2);
+
+  const moves = [
+    [x, 0],
+    [o, 1],
+    [x, 2],
+    [o, 4],
+    [x, 3],
+    [o, 5],
+    [x, 7],
+    [o, 6],
+    [x, 8],
+  ];
+  for (const [socket, index] of moves) {
+    const updatedState = waitForMessage(socket, (message) =>
+      message.type === "state" && message.board[index] !== null
+    );
+    socket.send(JSON.stringify({ type: "move", index }));
+    await updatedState;
+  }
+
+  const drawn = await waitForMessage(x, (message) =>
+    message.type === "state" && message.status === "finished" && message.winner === "draw"
+  );
+  assert.deepEqual(drawn.board, ["X", "O", "X", "X", "O", "O", "O", "X", "X"]);
+
+  const xRematch = waitForMessage(x, (message) =>
+    message.type === "state" && message.rematchStatus === "waiting"
+  );
+  x.send(JSON.stringify({ type: "rematch-vote", accept: true }));
+  await xRematch;
+
+  const nextRound = waitForMessage(o, (message) =>
+    message.type === "state" && message.status === "playing" && message.currentPlayer === "O" &&
+      message.board.every((cell) => cell === null)
+  );
+  o.send(JSON.stringify({ type: "rematch-vote", accept: true }));
+  const rematchState = await nextRound;
+  assert.equal(rematchState.currentPlayer, "O");
+
+  const xNotTurn = waitForMessage(x, (message) => message.type === "error");
+  x.send(JSON.stringify({ type: "move", index: 0 }));
+  assert.match((await xNotTurn).message, /not your turn/);
+
+  const oMoved = waitForMessage(x, (message) => message.type === "state" && message.board[0] === "O");
+  o.send(JSON.stringify({ type: "move", index: 0 }));
+  const updatedState = await oMoved;
+  assert.equal(updatedState.currentPlayer, "X");
+});

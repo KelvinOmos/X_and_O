@@ -33,6 +33,7 @@ const ROOM_TOKEN_KEY = "three-in-a-row-room-token";
 let mode          = "practice"; // "practice" | "online"
 let board         = [...EMPTY_BOARD];
 let currentPlayer = "X";
+let practiceStartingPlayer = "X";
 let roundOver     = false;
 let activeCode    = null;       // current room code
 let gameSocket    = null;
@@ -186,13 +187,18 @@ function playPractice(index) {
   render();
 }
 
-function resetBoard() {
+function resetBoard(startingPlayer = "X") {
   if (rematchDialog.open) rematchDialog.close();
   board         = [...EMPTY_BOARD];
-  currentPlayer = "X";
+  currentPlayer = startingPlayer;
   roundOver     = false;
   roundCounted  = false;
   render();
+}
+
+function startNextPracticeRound() {
+  practiceStartingPlayer = practiceStartingPlayer === "X" ? "O" : "X";
+  resetBoard(practiceStartingPlayer);
 }
 
 // ─── Online mode — state ──────────────────────────────────────────────────────
@@ -260,7 +266,7 @@ function connectToRoom(code, token = null) {
     setStatus("Reconnecting…");
     render();
   } else {
-    resetBoard();
+    resetBoard(practiceStartingPlayer);
     setStatus("Connecting…");
   }
 
@@ -342,7 +348,8 @@ function leaveMatch() {
   players        = [];
   connectedCount = 0;
   scores         = { X: 0, O: 0, draw: 0 };
-  resetBoard();
+  practiceStartingPlayer = "X";
+  resetBoard(practiceStartingPlayer);
   setStatus("Practice mode — take turns on this device.");
 }
 
@@ -372,8 +379,9 @@ newRoundButton.addEventListener("click", () => {
     }
     return;
   }
-  resetBoard();
-  setStatus("Practice mode — X starts the next round.");
+  if (roundOver) startNextPracticeRound();
+  else resetBoard(practiceStartingPlayer);
+  setStatus(`Practice mode — ${currentPlayer} starts the next round.`);
 });
 
 rematchAccept.addEventListener("click", () => {
@@ -383,8 +391,8 @@ rematchAccept.addEventListener("click", () => {
     }
     return;
   }
-  resetBoard();
-  setStatus("Practice mode — X starts the rematch.");
+  startNextPracticeRound();
+  setStatus(`Practice mode — ${currentPlayer} starts the rematch.`);
 });
 
 rematchDecline.addEventListener("click", () => {
